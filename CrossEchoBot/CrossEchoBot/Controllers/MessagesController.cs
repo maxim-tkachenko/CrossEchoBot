@@ -28,6 +28,10 @@ namespace CrossEchoBot
             {
                 if (activity.Type == ActivityTypes.Message)
                 {
+                    // need to fix an issue with parsing text from skype when user
+                    // mention a bot with skype autocomplete feature
+                    // e.g. <at id=\"XXXXX\">@CrossEchoBot</at> blah blah blah.
+                    // temporary workaround - do not use mentions with autocomplete :)
                     if (activity.Text.ToLower().Contains(BotNameLowerCase) ||
                         activity.Text.ToLower().Contains(BotShortName))
                     {
