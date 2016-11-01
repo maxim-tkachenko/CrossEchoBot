@@ -12,7 +12,9 @@ namespace CrossEchoBot
     [BotAuthentication]
     public class MessagesController : ApiController
     {
-        private const string BotName = "@cebot";
+        private const string BotShortName = "@cebot";
+        private const string BotName = "@CrossEchoBot";
+        private const string BotNameLowerCase = "@crossechobot";
 
         /// <summary>
         /// POST: api/Messages
@@ -20,13 +22,14 @@ namespace CrossEchoBot
         /// </summary>
         public async Task<HttpResponseMessage> Post([FromBody]Activity activity)
         {
+            Activity reply = null;
+
             try
             {
                 if (activity.Type == ActivityTypes.Message)
                 {
-                    Activity reply = null;
-
-                    if (activity.Text.ToLower().Contains(BotName))
+                    if (activity.Text.ToLower().Contains(BotNameLowerCase) ||
+                        activity.Text.ToLower().Contains(BotShortName))
                     {
                         if (activity.Text.ToLower().Contains("/getchatid"))
                         {
@@ -39,7 +42,8 @@ namespace CrossEchoBot
                         else if (activity.Text.ToLower().Contains("/pair"))
                         {
                             var text = activity.Text
-                                .Replace(BotName, string.Empty)
+                                .Replace(BotNameLowerCase, string.Empty)
+                                .Replace(BotShortName, string.Empty)
                                 .Replace("/pair", string.Empty)
                                 .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -79,7 +83,13 @@ namespace CrossEchoBot
                             var chat = FindChatTunnel(activity.Conversation.Id);
                             if (chat != null)
                                 // remove mention from text
-                                await Resend(activity.Recipient, chat, activity.Text.Replace(BotName, string.Empty));
+                                await Resend(
+                                    activity.Recipient,
+                                    chat,
+                                    activity.Text
+                                        .Replace(BotShortName, string.Empty)
+                                        .Replace(BotName, string.Empty)
+                                        .Replace(BotNameLowerCase, string.Empty));
                         }
                     }
                     else
@@ -91,25 +101,26 @@ namespace CrossEchoBot
                                 await Resend(activity.Recipient, chat, activity.Text);
                         }
                     }
-
-                    if (reply != null)
-                    {
-                        var connector = new ConnectorClient(new Uri(reply.ServiceUrl));
-                        await connector.Conversations.ReplyToActivityAsync(reply);
-                    }
                 }
                 else
                 {
                     HandleSystemMessage(activity);
                 }
-
-                return Request.CreateResponse(HttpStatusCode.OK);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex);
-                return Request.CreateResponse(HttpStatusCode.InternalServerError);
+                reply = activity.CreateReply(
+                    "An error occured while processing your request :(. Please contact to developer.");
             }
+
+            if (reply != null)
+            {
+                var connector = new ConnectorClient(new Uri(reply.ServiceUrl));
+                await connector.Conversations.ReplyToActivityAsync(reply);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.OK);
         }
 
         private async Task Resend(ChannelAccount recipient, ChatIdentity chat, string message)
