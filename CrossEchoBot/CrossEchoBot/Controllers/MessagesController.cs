@@ -44,6 +44,7 @@ namespace CrossEchoBot
                             var text = activity.Text
                                 .Replace(BotNameLowerCase, string.Empty)
                                 .Replace(BotShortName, string.Empty)
+                                .Replace(BotName, string.Empty)
                                 .Replace("/pair", string.Empty)
                                 .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -73,9 +74,19 @@ namespace CrossEchoBot
                         {
                             reply = activity.CreateReply(
                                 "Hello friend! I'm a CrossEcho Bot or cebot. " +
-                                "For communicating with me you need to mention me " + BotName + " and use one of the next commands: /getchatid, /pair, /skip, /help. " +
+                                "For communicating with me you need to mention me " + BotName + " and use one of the next commands: /getchatid, /pair, /skip, /delete, /help. " +
                                 "I'll automatically resend any message from conversation which contains 'http' text. " +
                                 "Also I'll resend any message if you mention me without additional commands.");
+                        }
+                        else if (activity.Text.ToLower().Contains("/delete"))
+                        {
+                            var count = RemoveChatTunnels(activity.Conversation.Id);
+                            if (count > 0)
+                                reply = activity.CreateReply(
+                                    "This conversation was successfully disconnected from " + count + " conversation(s).");
+                            else
+                                reply = activity.CreateReply(
+                                        "This conversation isn't connected to another conversations.");
                         }
                         else
                         {
@@ -154,6 +165,15 @@ namespace CrossEchoBot
             }
 
             return null;
+        }
+
+        private int RemoveChatTunnels(string chatId)
+        {
+            // handle case if one of properties is null
+            return
+                Storage.Data.RemoveAll(
+                    x => x.From.Id == chatId ||
+                    x.To.Id == chatId);
         }
 
         private Activity HandleSystemMessage(Activity activity)
