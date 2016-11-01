@@ -52,17 +52,24 @@ namespace CrossEchoBot
                             {
                                 var fromId = text[0];
 
-                                // add check for url
-                                var pair = Storage.Data.FirstOrDefault(x => x.From.Id == fromId);
-                                if (pair != null)
+                                if (fromId == activity.Conversation.Id)
                                 {
-                                    // add check if To is not empty (re-pair operation)
-                                    pair.To = new ChatIdentity(activity.Conversation.Id, activity.ServiceUrl);
-                                    reply = activity.CreateReply("Conversations successfully paired! :)");
+                                    reply = activity.CreateReply("You have entred an id of current conversation.");
                                 }
                                 else
                                 {
-                                    reply = activity.CreateReply("Sorry, I can't find a conversation with that id :(");
+                                    // add check for url
+                                    var pair = Storage.Data.FirstOrDefault(x => x.From.Id == fromId);
+                                    if (pair != null)
+                                    {
+                                        // add check if To is not empty (re-pair operation)
+                                        pair.To = new ChatIdentity(activity.Conversation.Id, activity.ServiceUrl);
+                                        reply = activity.CreateReply("Conversations successfully paired! :)");
+                                    }
+                                    else
+                                    {
+                                        reply = activity.CreateReply("Sorry, I can't find a conversation with that id :(");
+                                    }
                                 }
                             }
                         }
